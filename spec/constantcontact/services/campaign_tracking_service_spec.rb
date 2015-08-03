@@ -7,6 +7,10 @@
 require 'spec_helper'
 
 describe ConstantContact::Services::CampaignTrackingService do
+  before(:each) do
+    @request = double('http request', :user => nil, :password => nil, :url => 'http://example.com', :redirection_history => nil)
+  end
+
   describe "#get_bounces" do
     it "gets bounces for a given campaign" do
       campaign_id = 1
@@ -14,10 +18,10 @@ describe ConstantContact::Services::CampaignTrackingService do
       json = load_file('campaign_tracking_bounces_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      set = ConstantContact::Services::CampaignTrackingService.get_bounces('token', campaign_id, params)
+      set = ConstantContact::Services::CampaignTrackingService.get_bounces(campaign_id, params)
       set.should be_kind_of(ConstantContact::Components::ResultSet)
       set.results.first.should be_kind_of(ConstantContact::Components::BounceActivity)
       set.results.first.activity_type.should eq('EMAIL_BOUNCE')
@@ -31,10 +35,10 @@ describe ConstantContact::Services::CampaignTrackingService do
       json = load_file('campaign_tracking_clicks_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      set = ConstantContact::Services::CampaignTrackingService.get_clicks('token', campaign_id, params)
+      set = ConstantContact::Services::CampaignTrackingService.get_clicks(campaign_id, params)
       set.should be_kind_of(ConstantContact::Components::ResultSet)
       set.results.first.should be_kind_of(ConstantContact::Components::ClickActivity)
       set.results.first.activity_type.should eq('EMAIL_CLICK')
@@ -48,10 +52,10 @@ describe ConstantContact::Services::CampaignTrackingService do
       json = load_file('campaign_tracking_forwards_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      set = ConstantContact::Services::CampaignTrackingService.get_forwards('token', campaign_id, params)
+      set = ConstantContact::Services::CampaignTrackingService.get_forwards(campaign_id, params)
       set.should be_kind_of(ConstantContact::Components::ResultSet)
       set.results.first.should be_kind_of(ConstantContact::Components::ForwardActivity)
       set.results.first.activity_type.should eq('EMAIL_FORWARD')
@@ -65,10 +69,10 @@ describe ConstantContact::Services::CampaignTrackingService do
       json = load_file('campaign_tracking_opens_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      set = ConstantContact::Services::CampaignTrackingService.get_opens('token', campaign_id, params)
+      set = ConstantContact::Services::CampaignTrackingService.get_opens(campaign_id, params)
       set.should be_kind_of(ConstantContact::Components::ResultSet)
       set.results.first.should be_kind_of(ConstantContact::Components::OpenActivity)
       set.results.first.activity_type.should eq('EMAIL_OPEN')
@@ -82,10 +86,10 @@ describe ConstantContact::Services::CampaignTrackingService do
       json = load_file('campaign_tracking_sends_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      set = ConstantContact::Services::CampaignTrackingService.get_sends('token', campaign_id, params)
+      set = ConstantContact::Services::CampaignTrackingService.get_sends(campaign_id, params)
       set.should be_kind_of(ConstantContact::Components::ResultSet)
       set.results.first.should be_kind_of(ConstantContact::Components::SendActivity)
       set.results.first.activity_type.should eq('EMAIL_SEND')
@@ -99,10 +103,10 @@ describe ConstantContact::Services::CampaignTrackingService do
       json = load_file('campaign_tracking_unsubscribes_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      set = ConstantContact::Services::CampaignTrackingService.get_unsubscribes('token', campaign_id, params)
+      set = ConstantContact::Services::CampaignTrackingService.get_unsubscribes(campaign_id, params)
       set.should be_kind_of(ConstantContact::Components::ResultSet)
       set.results.first.should be_kind_of(ConstantContact::Components::UnsubscribeActivity)
       set.results.first.activity_type.should eq('EMAIL_UNSUBSCRIBE')
@@ -115,10 +119,10 @@ describe ConstantContact::Services::CampaignTrackingService do
       json = load_file('campaign_tracking_summary_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      summary = ConstantContact::Services::CampaignTrackingService.get_summary('token', campaign_id)
+      summary = ConstantContact::Services::CampaignTrackingService.get_summary(campaign_id)
       summary.should be_kind_of(ConstantContact::Components::TrackingSummary)
       summary.sends.should eq(15)
     end

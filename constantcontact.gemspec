@@ -5,12 +5,12 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |s|
   s.name = "constantcontact"
-  s.version = '1.3.2'
+  s.version = '2.1.0'
   s.platform = Gem::Platform::RUBY
   s.authors = ["ConstantContact"]
   s.homepage = "http://www.constantcontact.com"
   s.summary = %q{Constant Contact SDK for Ruby}
-  s.email = "apisupport@constantcontact.com"
+  s.email = "webservices@constantcontact.com"
   s.description = "Ruby library for interactions with Constant Contact v2 API"
   s.license = "MIT"
 
@@ -26,6 +26,6 @@ Gem::Specification.new do |s|
   
   s.add_runtime_dependency("rest-client", '~> 1.6', '>= 1.6.7')
   s.add_runtime_dependency("json", '~> 1.8', '>= 1.8.1')
-  s.add_runtime_dependency('mime-types', '~> 1.25', '>= 1.25.1')
+  s.add_runtime_dependency('mime-types', '~> 2.4', '>= 2.4.1')
   s.add_development_dependency("rspec", '~> 2.14')
 end

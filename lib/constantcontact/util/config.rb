@@ -100,6 +100,9 @@ module ConstantContact
           :first_name       => 'FIRST NAME',
           :middle_name      => 'MIDDLE NAME',
           :last_name        => 'LAST NAME',
+          :birthday_day     => 'BIRTHDAY_DAY',
+          :birthday_month   => 'BIRTHDAY_MONTH',
+          :anniversary      => 'ANNIVERSARY',
           :job_title        => 'JOB TITLE',
           :company_name     => 'COMPANY NAME',
           :work_phone       => 'WORK PHONE',
@@ -132,9 +135,11 @@ module ConstantContact
 
         # Errors to be returned for various exceptions
         :errors => {
-          :id_or_object => 'Only an id or %s object are allowed for this method.',
-          :invalid_webhook => 'Invalid Webhook. The x-ctct-hmac-sha256 does not correspond to message encryption.',
-          :api_secret_missing => 'The api_secret is missing in explicit call or configuration.'
+          :api_key_missing      => 'api_key required either explicitly or in configuration.',
+          :access_token_missing => 'access_token required explicitly.',
+          :id_or_object         => 'Only an id or %s object are allowed for this method.',
+          :invalid_webhook      => 'Invalid Webhook. The x-ctct-hmac-sha256 does not correspond to message encryption.',
+          :api_secret_missing   => 'The api_secret is missing in explicit call or configuration.'
         }
       }
 

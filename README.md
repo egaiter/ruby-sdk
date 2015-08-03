@@ -9,7 +9,7 @@ Installation
 ====
 Via bundler:
 ```ruby
-gem 'constantcontact', '~> 1.3.2'
+gem 'constantcontact', '~> 2.1.0'
 ```
 Otherwise:
 ```bash
@@ -26,6 +26,12 @@ ConstantContact::Util::Config.configure do |config|
   config[:auth][:redirect_uri] = 'https://example.com/auth/constantcontact'
 end
 ```        
+
+Documentation
+=====
+SDK Documentation is hosted at http://constantcontact.github.io/ruby-sdk
+
+API Documentation is located at http://developer.constantcontact.com/docs/developer-guides/api-documentation-index.html
 
 Getting Started
 ====
@@ -49,8 +55,8 @@ if @code.present?
   response = @oauth.get_access_token(@code)
   if response.present?
     token = response['access_token']
-    cc = ConstantContact::Api.new('your api key')
-    @contacts = cc.get_contacts(token)
+    cc = ConstantContact::Api.new('your api key', token)
+    @contacts = cc.get_contacts()
   end
 else
   # if not code param is provided redirect into the OAuth flow
@@ -99,8 +105,8 @@ get '/my_url' do
     response = @oauth.get_access_token(@code)
     if response
       token = response['access_token']
-      cc = ConstantContact::Api.new('your api key')
-      @contacts = cc.get_contacts(token)
+      cc = ConstantContact::Api.new('your api key', token)
+      @contacts = cc.get_contacts()
     end
   end
 

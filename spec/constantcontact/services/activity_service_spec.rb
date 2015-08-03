@@ -7,15 +7,19 @@
 require 'spec_helper'
 
 describe ConstantContact::Services::ActivityService do
+  before(:each) do
+    @request = double('http request', :user => nil, :password => nil, :url => 'http://example.com', :redirection_history => nil)
+  end
+
   describe "#get_activities" do
     it "gets a set of activities" do
       json_response = load_file('activities_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json_response, net_http_resp, {})
+      response = RestClient::Response.create(json_response, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      activities = ConstantContact::Services::ActivityService.get_activities('token')
+      activities = ConstantContact::Services::ActivityService.get_activities()
       activities.first.should be_kind_of(ConstantContact::Components::Activity)
       activities.first.type.should eq('REMOVE_CONTACTS_FROM_LISTS')
     end
@@ -26,10 +30,10 @@ describe ConstantContact::Services::ActivityService do
       json_response = load_file('activity_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json_response, net_http_resp, {})
+      response = RestClient::Response.create(json_response, net_http_resp, {}, @request)
       RestClient.stub(:get).and_return(response)
 
-      activity = ConstantContact::Services::ActivityService.get_activity('token', 'a07e1ilbm7shdg6ikeo')
+      activity = ConstantContact::Services::ActivityService.get_activity('a07e1ilbm7shdg6ikeo')
       activity.should be_kind_of(ConstantContact::Components::Activity)
       activity.type.should eq('REMOVE_CONTACTS_FROM_LISTS')
     end
@@ -37,46 +41,89 @@ describe ConstantContact::Services::ActivityService do
 
   describe "#create_add_contacts_activity" do
     it "creates an Add Contacts Activity" do
-      json_add_contacts = load_file('add_contacts_response.json')
-      json_lists = load_file('lists_response.json')
-      json_contacts = load_file('contacts_response.json')
+      json_request = load_file('add_contacts_request.json')
+      json_response = load_file('add_contacts_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json_add_contacts, net_http_resp, {})
+      response = RestClient::Response.create(json_response, net_http_resp, {}, @request)
       RestClient.stub(:post).and_return(response)
 
-      import = ConstantContact::Components::AddContactsImportData.new
+      contacts = []
+
+      # first contact
+      import = ConstantContact::Components::AddContactsImportData.new({
+          :first_name     => "John",
+          :last_name      => "Smith",
+          :birthday_month => "1",
+          :birthday_day   => "25",
+          :anniversary    => "03/12/2005",
+          :job_title      => "",
+          :company_name   => "My Company",
+          :home_phone     => "5555551212"
+      })
+
+      # add emails
+      import.add_email("user1@example.com")
+
+      # add addresses
       address = ConstantContact::Components::Address.create(
-        :line1 => "1601 Trapelo Rd",
-        :city => "Waltham",
-        :state => "MA"
+        :line1        => "123 Partridge Lane",
+        :line2        => "Apt. 3",
+        :city         => "Anytown",
+        :address_type => "PERSONAL",
+        :state_code   => "NH",
+        :country_code => "US",
+        :postal_code  => "02145"
       )
       import.add_address(address)
 
+      contacts << import
+
+      # second contact
+      import = ConstantContact::Components::AddContactsImportData.new({
+        :first_name     => "Jane",
+        :last_name      => "Doe",
+        :job_title      => "",
+        :company_name   => "Acme, Inc.",
+        :home_phone     => "5555551213"
+      })
+
+      # add emails
+      import.add_email("user2@example.com")
+
+      # add addresses
+      address = ConstantContact::Components::Address.create(
+        :line1        => "456 Jones Road",
+        :city         => "AnyTownShip",
+        :address_type => "PERSONAL",
+        :state_code   => "DE",
+        :country_code => "US",
+        :postal_code  => "01234"
+      )
+      import.add_address(address)
+
+      # add custom fields
       custom_field = ConstantContact::Components::CustomField.create(
-        :name => "custom_field_1",
-        :value => "my custom value"
+        :name  => "custom_field_6",
+        :value => "Blue Jeans"
       )
       import.add_custom_field(custom_field)
-      import.add_email("abc@def.com")
 
-      contacts = []
+      custom_field = ConstantContact::Components::CustomField.create(
+        :name  => "custom_field_12",
+        :value => "Special Order"
+      )
+      import.add_custom_field(custom_field)
+
       contacts << import
-      contacts_objects = JSON.parse(json_contacts)
-      contacts_objects['results'].each do |contact|
-        contacts << ConstantContact::Components::Contact.create(contact)
-      end
 
-      lists = []
-      lists_objects = JSON.parse(json_lists)
-      lists_objects.each do |list|
-        lists << ConstantContact::Components::ContactList.create(list)
-      end
+      lists = ['4', '5', '6']
 
       add_contact = ConstantContact::Components::AddContacts.new(contacts, lists)
 
-      activity = ConstantContact::Services::ActivityService.create_add_contacts_activity(
-        'token', add_contact)
+      JSON.parse(json_request).should eq(JSON.parse(JSON.generate(add_contact)))
+
+      activity = ConstantContact::Services::ActivityService.create_add_contacts_activity(add_contact)
       activity.should be_kind_of(ConstantContact::Components::Activity)
       activity.type.should eq('ADD_CONTACTS')
     end
@@ -89,11 +136,11 @@ describe ConstantContact::Services::ActivityService do
       lists = 'list1, list2'
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:post).and_return(response)
 
       activity = ConstantContact::Services::ActivityService.create_add_contacts_activity_from_file(
-        'token', 'contacts.txt', content, lists)
+        'contacts.txt', content, lists)
       activity.should be_kind_of(ConstantContact::Components::Activity)
       activity.type.should eq('ADD_CONTACTS')
     end
@@ -109,11 +156,10 @@ describe ConstantContact::Services::ActivityService do
 
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json_clear_lists, net_http_resp, {})
+      response = RestClient::Response.create(json_clear_lists, net_http_resp, {}, @request)
       RestClient.stub(:post).and_return(response)
 
-      activity = ConstantContact::Services::ActivityService.add_clear_lists_activity(
-        'token', lists)
+      activity = ConstantContact::Services::ActivityService.add_clear_lists_activity(lists)
       activity.should be_kind_of(ConstantContact::Components::Activity)
       activity.type.should eq('CLEAR_CONTACTS_FROM_LISTS')
     end
@@ -125,12 +171,12 @@ describe ConstantContact::Services::ActivityService do
       lists = 'list1, list2'
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:post).and_return(response)
       email_addresses = ["djellesma@constantcontact.com"]
 
       activity = ConstantContact::Services::ActivityService.add_remove_contacts_from_lists_activity(
-        'token', email_addresses, lists)
+        email_addresses, lists)
       activity.should be_kind_of(ConstantContact::Components::Activity)
       activity.type.should eq('REMOVE_CONTACTS_FROM_LISTS')
     end
@@ -143,11 +189,11 @@ describe ConstantContact::Services::ActivityService do
       lists = 'list1, list2'
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json, net_http_resp, {})
+      response = RestClient::Response.create(json, net_http_resp, {}, @request)
       RestClient.stub(:post).and_return(response)
 
       activity = ConstantContact::Services::ActivityService.add_remove_contacts_from_lists_activity_from_file(
-        'token', 'contacts.txt', content, lists)
+        'contacts.txt', content, lists)
       activity.should be_kind_of(ConstantContact::Components::Activity)
       activity.type.should eq('REMOVE_CONTACTS_FROM_LISTS')
     end
@@ -159,13 +205,12 @@ describe ConstantContact::Services::ActivityService do
       json_response = load_file('export_contacts_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json_response, net_http_resp, {})
+      response = RestClient::Response.create(json_response, net_http_resp, {}, @request)
       RestClient.stub(:post).and_return(response)
 
       export_contacts = ConstantContact::Components::ExportContacts.new(JSON.parse(json_request))
 
-      activity = ConstantContact::Services::ActivityService.add_export_contacts_activity(
-        'token', export_contacts)
+      activity = ConstantContact::Services::ActivityService.add_export_contacts_activity(export_contacts)
       activity.should be_kind_of(ConstantContact::Components::Activity)
       activity.type.should eq('EXPORT_CONTACTS')
     end
@@ -177,7 +222,7 @@ describe ConstantContact::Services::ActivityService do
       json_response = load_file('remove_contacts_from_lists_response.json')
       net_http_resp = Net::HTTPResponse.new(1.0, 200, 'OK')
 
-      response = RestClient::Response.create(json_response, net_http_resp, {})
+      response = RestClient::Response.create(json_response, net_http_resp, {}, @request)
       RestClient.stub(:post).and_return(response)
 
       request_object = JSON.parse(json_request)
@@ -192,9 +237,7 @@ describe ConstantContact::Services::ActivityService do
         end
       end
 
-      activity = ConstantContact::Services::ActivityService.add_remove_contacts_from_lists_activity(
-        'token', email_addresses, lists)
-
+      activity = ConstantContact::Services::ActivityService.add_remove_contacts_from_lists_activity(email_addresses, lists)
       activity.type.should eq('REMOVE_CONTACTS_FROM_LISTS')
     end
   end
